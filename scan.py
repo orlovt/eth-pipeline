@@ -31,12 +31,20 @@ def delivery_report(err, msg):
     else:
         print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
 
-def produce(topic, config, block_data):
+def produce(topic, config, transaction_data):
     # Creates a new producer instance
     producer = Producer(config)
     # Produces a sample message
-    producer.produce(topic, key=str(block_data['block_number']), value=json.dumps(block_data), callback=delivery_report)
+    producer.produce(topic, key=str(transaction_data['hash']), value=json.dumps(transaction_data), callback=delivery_report)
     producer.flush()
+
+
+# def produce(topic, config, transaction_data):
+#     # Creates a new producer instance
+#     producer = Producer(config)
+#     # Produces a message
+#     producer.produce(topic, key=str(transaction_data['hash']), value=json.dumps(transaction_data), callback=delivery_report)
+#     producer.flush()  # Ensure all messages are delivered
 
 async def subscribe_new_blocks(config):
     infura_project_id = 'a30f6d61930e4435aecdd1b6815f2026'
