@@ -38,8 +38,8 @@ def consume_messages(config, topic):
                 elif msg.error():
                     raise KafkaException(msg.error())
             else:
-                print('Consumed message from topic {}: key = {} value = {}'.format(
-                    msg.topic(), msg.key().decode('utf-8'), msg.value().decode('utf-8')))
+                print('Consumed message from topic {}: key = {}'.format(
+                    msg.topic(), msg.key().decode('utf-8')))
     except KeyboardInterrupt:
         pass
     finally:
