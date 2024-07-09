@@ -5,6 +5,7 @@ from datetime import datetime
 from web3 import Web3
 from confluent_kafka import Producer
 
+
 def read_config():
     config = {}
     try:
@@ -71,12 +72,22 @@ async def subscribe_new_blocks(config, topic):
     except Exception as e:
         print(f"Error in WebSocket connection: {e}")
 
+
 def analyze_block(block, config, topic):
+    """
+    Analyzes a block and produces the transactions in batch to a Kafka topic.
+
+    Args:
+        block (dict): The block to analyze.
+        config (dict): The configuration settings.
+        topic (str): The Kafka topic to produce the transactions to.
+    """
     timestamp = datetime.fromtimestamp(block['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
     print(f"Analyzing block {block['number']} with {len(block.transactions)} transactions")
 
     transactions = []
-    for tx in block.transactions:
+    print(f"Producing top 50 transactions for block {block['number']}")
+    for tx in block.transactions[:50]:
         receipt = web3.eth.get_transaction_receipt(tx['hash'])
         transaction_data = {
             'block_number': block['number'],
@@ -96,18 +107,12 @@ def analyze_block(block, config, topic):
             'transaction_fee': float(Web3.from_wei(receipt['gasUsed'] * tx['gasPrice'], 'ether')),
             'effective_gas_price': float(Web3.from_wei(receipt['effectiveGasPrice'], 'gwei'))
         }
-
-        # print(f"Transaction Hash: {transaction_data['transaction_hash']}")
         transactions.append(transaction_data)
     
     # Produce transactions in batch
     producer = Producer(config)
     produce_batch(producer, topic, transactions)
 
-
-    # Produce transactions in batch
-    producer = Producer(config)
-    produce_batch(producer, topic, transactions)
 
 async def main():
     config = read_config()
