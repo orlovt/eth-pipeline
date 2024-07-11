@@ -39,38 +39,44 @@ async def subscribe_new_blocks(config, topic):
     infura_project_id = 'a30f6d61930e4435aecdd1b6815f2026'
     infura_url = f'wss://mainnet.infura.io/ws/v3/{infura_project_id}'
 
-    try:
-        print("Connecting to Infura WebSocket...")
-        async with websockets.connect(infura_url) as websocket:
-            subscription_request = json.dumps({
-                "jsonrpc": "2.0",
-                "method": "eth_subscribe",
-                "params": ["newHeads"],
-                "id": 1
-            })
+    while True:
+        try:
+            print("Connecting to Infura WebSocket...")
+            async with websockets.connect(infura_url) as websocket:
+                subscription_request = json.dumps({
+                    "jsonrpc": "2.0",
+                    "method": "eth_subscribe",
+                    "params": ["newHeads"],
+                    "id": 1
+                })
 
-            await websocket.send(subscription_request)
-            print("Subscribed to new block headers")
+                await websocket.send(subscription_request)
+                print("Subscribed to new block headers")
 
-            while True:
-                try:
-                    response = await websocket.recv()
-                    response_json = json.loads(response)
+                while True:
+                    try:
+                        response = await websocket.recv()
+                        response_json = json.loads(response)
 
-                    if 'params' in response_json:
-                        block_header = response_json['params']['result']
-                        block_number = int(block_header['number'], 16)
-                        print(f"New block header received: {block_number}")
-                        block = web3.eth.get_block(block_number, full_transactions=True)
-                        print(f"Full block data retrieved for block number: {block['number']}")
-                        analyze_block(block, config, topic)
+                        if 'params' in response_json:
+                            block_header = response_json['params']['result']
+                            block_number = int(block_header['number'], 16)
+                            print(f"New block header received: {block_number}")
+                            block = web3.eth.get_block(block_number, full_transactions=True)
+                            print(f"Full block data retrieved for block number: {block['number']}")
+                            analyze_block(block, config, topic)
 
-                except websockets.ConnectionClosed:
-                    print("Connection closed, attempting to reconnect")
-                    await asyncio.sleep(1)
-                    continue
-    except Exception as e:
-        print(f"Error in WebSocket connection: {e}")
+                    except websockets.ConnectionClosed:
+                        print("Connection closed, attempting to reconnect")
+                        break  # Exit inner loop to reconnect
+
+                    except Exception as e:
+                        print(f"Error processing block: {e}")
+                        continue  # Continue with next block
+
+        except Exception as e:
+            print(f"Error in WebSocket connection: {e}")
+            await asyncio.sleep(5)  # Wait before attempting to reconnect
 
 
 def analyze_block(block, config, topic):
@@ -87,7 +93,7 @@ def analyze_block(block, config, topic):
 
     transactions = []
     print(f"Producing top 50 transactions for block {block['number']}")
-    for tx in block.transactions[:50]:
+    for tx in block.transactions:
         receipt = web3.eth.get_transaction_receipt(tx['hash'])
         transaction_data = {
             'block_number': block['number'],
