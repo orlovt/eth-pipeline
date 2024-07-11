@@ -4,8 +4,10 @@ import asyncpg
 from confluent_kafka import Consumer, KafkaException, KafkaError
 from datetime import datetime
 import sys
+import os
 
-CONNECTION = "postgres://tsdbadmin:qb2wvgexfzqzlneo@o4e65tiybv.n6wrdgoi1v.tsdb.cloud.timescale.com:37034/tsdb?sslmode=require"
+CONNECTION = os.getenv('POSTGRES_CONNECTION')
+
 
 async def create_timescale_table(conn):
     create_table_query = """
