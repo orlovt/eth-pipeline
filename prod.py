@@ -36,7 +36,7 @@ def produce_batch(producer, topic, transactions):
         print(f"Failed to produce message: {e}")
 
 async def subscribe_new_blocks(config, topic):
-    infura_project_id = 'a30f6d61930e4435aecdd1b6815f2026'
+    infura_project_id = os.getenv('INFURA_PROJECT_ID')
     infura_url = f'wss://mainnet.infura.io/ws/v3/{infura_project_id}'
 
     while True:
